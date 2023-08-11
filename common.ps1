@@ -28,7 +28,7 @@ function GetToken ($token, $envToken) {
         return $envToken
     }
 
-    throw "Either Source or Target Token is missing. Either provide it through the '-SourceToken' or '-TargetToken' parameter or create the env. variables 'GH_PAT' and 'GH_SOURCE_PAT'"
+    throw "Either Ados or Github Token are missing. Either provide it through the '-AdosToken' or '-GithubToken' parameter or create the environment variables 'ADOS_PAT' and 'GH_PAT'"
 }
 
 function BuildHeaders ($token) {
