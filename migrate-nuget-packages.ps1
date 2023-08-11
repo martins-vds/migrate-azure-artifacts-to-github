@@ -45,7 +45,6 @@ param (
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-. $PSScriptRoot\common-packages.ps1
 . $PSScriptRoot\common-ados-artifacts.ps1
 . $PSScriptRoot\common-nuget.ps1
 

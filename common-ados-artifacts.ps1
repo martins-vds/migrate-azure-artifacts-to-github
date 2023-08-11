@@ -44,7 +44,7 @@ function GetAdosPackages {
         $skip = 0
 
         do {
-            $packages = Get -uri "$($packagesApi -f $skip)" -headers $(BuildAdoHeaders $token)
+            $packages = Get -uri "$($packagesApi -f $skip)" -headers $(BuildAdosHeaders $token)
             $allPackages += $packages.value
             $skip += 100
         }while ($packages.count -gt 0)
