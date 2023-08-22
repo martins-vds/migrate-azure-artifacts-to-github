@@ -99,7 +99,15 @@ function IsPackageInternal {
             $feedApi = "https://feeds.dev.azure.com/$org/$project/_apis/packaging/Feeds/$feed/packages"    
         }
 
-        $provenance = Get -uri "$feedApi/$packageId/Versions/$packageVersionId/provenance?api-version=7.0-preview.1" -headers $(BuildAdosHeaders $token)
-        return $provenance.provenance.provenanceSource -like "*internal*"
+        $version = Get -uri "$feedApi/$packageId/Versions/$($packageVersionId)?api-version=7.0-preview.1" -headers $(BuildAdosHeaders $token)
+        
+        if ($version.sourceChain.Length -eq 0) {
+            return $true
+        }
+        else {
+            $internalFeeds = $version.sourceChain | Where-Object { $_.upstreamSourceType -eq "internal" }
+
+            return $internalFeeds.Length -gt 0
+        }
     }
 }
