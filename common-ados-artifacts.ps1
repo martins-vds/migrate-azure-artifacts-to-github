@@ -53,7 +53,7 @@ function GetAdosPackages {
                 $package = $_
                 $package.versions = @($package.versions | Where-Object {
                         $packageVersion = $_
-                        $provenance = Get -uri "$feedApi/$($package.id)/Versions/$($packageVersion.id)/provenance?api-version=7.0-preview.1" -headers $(BuildAdoHeaders $token)
+                        $provenance = Get -uri "$feedApi/$($package.id)/Versions/$($packageVersion.id)/provenance?api-version=7.0-preview.1" -headers $(BuildAdosHeaders $token)
                         return $provenance.provenance.provenanceSource -like "*internal*"
                     })
 
