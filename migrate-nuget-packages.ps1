@@ -71,6 +71,8 @@ if (-Not(RepositoryExits -org $GithubOrg -repository $GithubRepo -token $targetP
     exit 0
 }
 
+Write-Host "Fetching nuget packages from Azure Artifacts feed '$AdosFeed' in Azure DevOps organization '$AdosOrg'..."
+
 if ([string]::IsNullOrEmpty($AdosProject)) {
     $sourceNugetPackages = GetAdosPackages -org $AdosOrg -feed $AdosFeed -type "NuGet" -token $sourcePat
 }
