@@ -39,7 +39,9 @@ param (
     $AdosToken,
     [Parameter(Mandatory = $false)]
     [string]
-    $GithubToken
+    $GithubToken,
+    [switch]
+    $InternalOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -101,6 +103,20 @@ $sourceNugetPackages | ForEach-Object {
     $sourceNugetPackageVersions | ForEach-Object {
         $sourceNugetPackageVersion = $_
         
+        if($InternalOnly){
+            if ([string]::IsNullOrEmpty($AdosProject)) {
+                $isInternal = IsPackageInternal -org $AdosOrg -feed $AdosFeed -packageId $sourceNugetPackage.id -packageVersionId $sourceNugetPackageVersion.id -token $sourcePat
+            }
+            else {
+                $isInternal = IsPackageInternal -org $AdosOrg -project $AdosProject -feed $AdosFeed -packageId $sourceNugetPackage.id -packageVersionId $sourceNugetPackageVersion.id -token $sourcePat
+            }
+
+            if (-Not $isInternal) {
+                Write-Host "Skipping package '$($sourceNugetPackage.name).$($sourceNugetPackageVersion.version)' because it is not internal." -ForegroundColor Yellow
+                return
+            }
+        }
+
         Write-Host "Migrating package '$($sourceNugetPackage.name).$($sourceNugetPackageVersion.version)'..." -ForegroundColor Cyan
 
         DownloadNugetPackage -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -source "ados" -configPath $sourceNugetConfig -packagesPath $PackagesPath.FullName

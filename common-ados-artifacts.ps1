@@ -54,21 +54,52 @@ function GetAdosPackages {
 
         Write-Verbose "Fetched $($allPackages.count) packages from Azure DevOps feed '$feed' in organization '$org'."
 
-        Write-Verbose "Filtering packages with internal provenance source..."
+        return $allPackages
+    }
+}
 
-        $internalPackages = @($allPackages | Where-Object { 
-                $package = $_
-                $package.versions = @($package.versions | Where-Object {
-                        $packageVersion = $_
-                        $provenance = Get -uri "$feedApi/$($package.id)/Versions/$($packageVersion.id)/provenance?api-version=7.0-preview.1" -headers $(BuildAdosHeaders $token)
-                        return $provenance.provenance.provenanceSource -like "*internal*"
-                    })
+function IsPackageInternal {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ParameterSetName = "OrgFeed")]
+        [Parameter(Mandatory = $true, ParameterSetName = "ProjFeed")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $org,
+        [Parameter(Mandatory = $true, ParameterSetName = "ProjFeed")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $project,
+        [Parameter(Mandatory = $true, ParameterSetName = "OrgFeed")]
+        [Parameter(Mandatory = $true, ParameterSetName = "ProjFeed")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $feed,
+        [Parameter(Mandatory = $true, ParameterSetName = "OrgFeed")]
+        [Parameter(Mandatory = $true, ParameterSetName = "ProjFeed")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $packageId,
+        [Parameter(Mandatory = $true, ParameterSetName = "OrgFeed")]
+        [Parameter(Mandatory = $true, ParameterSetName = "ProjFeed")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $packageVersionId,
+        [Parameter(Mandatory = $true, ParameterSetName = "OrgFeed")]
+        [Parameter(Mandatory = $true, ParameterSetName = "ProjFeed")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $token
+    )
+    process {
+        if ([string]::IsNullOrEmpty($project)) {
+            $feedApi = "https://feeds.dev.azure.com/$org/_apis/packaging/Feeds/$feed/packages"
+        }
+        else {
+            $feedApi = "https://feeds.dev.azure.com/$org/$project/_apis/packaging/Feeds/$feed/packages"    
+        }
 
-                return $package.versions.count -gt 0
-            })
-
-        Write-Verbose "Filtered $($internalPackages.count) packages with internal provenance source."
-
-        return $internalPackages
+        $provenance = Get -uri "$feedApi/$packageId/Versions/$packageVersionId/provenance?api-version=7.0-preview.1" -headers $(BuildAdosHeaders $token)
+        return $provenance.provenance.provenanceSource -like "*internal*"
     }
 }
