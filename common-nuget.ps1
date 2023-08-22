@@ -132,12 +132,12 @@ function UpdateNugetPackageProjectUrl($nuspec, $org, $repository) {
 function RepackNugetPackage($nuspec, $package, $version, $packagesPath) {
     $nuspec.OuterXml | Set-Content -Path $packagesPath\$($package).$($version)\$($package).nuspec -Force | Out-Null
     # Exec { nuget pack $packagesPath\$($package).$($version)\$($package).nuspec -OutputDirectory $packagesPath -NonInteractive } | Out-Null    
-    ExecProcess -filePath nuget -argumentList @("nuget pack $packagesPath\$($package).$($version)\$($package).nuspec -OutputDirectory $packagesPath -NonInteractive")
+    ExecProcess -filePath nuget -argumentList @("pack $packagesPath\$($package).$($version)\$($package).nuspec -OutputDirectory $packagesPath -NonInteractive")
 }
 
 function PushNugetPackage($org, $package, $version, $configPath, $packagesPath, $source) {
     # Exec { nuget push $packagesPath\$($package).$($version).nupkg -Source $source -ConfigFile $configPath\nuget.config -NonInteractive -SkipDuplicate } | Out-Null
-    ExecProcess -filePath nuget -argumentList @("nuget push $packagesPath\$($package).$($version).nupkg -Source $source -ConfigFile $configPath\nuget.config -NonInteractive -SkipDuplicate")
+    ExecProcess -filePath nuget -argumentList @("push $packagesPath\$($package).$($version).nupkg -Source $source -ConfigFile $configPath\nuget.config -NonInteractive -SkipDuplicate")
 }
 
 function DeleteNugetPackage($package, $version, $packagesPath) {
