@@ -8,6 +8,17 @@ function Exec {
     }
 }
 
+function ExecProcess($filePath, $argumentList, $workingDirectory = $PSScriptRoot) {
+    $errorsLogPath = Join-Path $Env:Temp "errors-$(New-Guid).log"
+    New-Item -Type File -Path $errorsLogPath | Out-Null
+
+    $proc = Start-Process -FilePath $filePath -ArgumentList $argumentList -WorkingDirectory $workingDirectory -Wait -NoNewWindow -PassThru -RedirectStandardError $errorsLogPath  
+
+    if ($proc.ExitCode -ne 0) {
+        throw "Failed to run command '$filePath $argumentList'. Check the file '$errorsLogPath' for more information."
+    }
+}
+
 function ConfigureGithubNuget ($org, $username, $path, $token) {  
     $xml = @"
 <?xml version="1.0" encoding="utf-8"?>
@@ -73,7 +84,9 @@ function ConfigureNuget ($path, $configXml) {
 }
 
 function DownloadNugetPackage($package, $version, $configPath, $packagesPath, $source) {
-    Exec { nuget install $package -Version $version -Source $source -Source nuget -OutputDirectory $packagesPath -ConfigFile $configPath\nuget.config -NonInteractive } | Out-Null
+    # Exec { nuget install $package -Version $version -Source $source -Source nuget -OutputDirectory $packagesPath -ConfigFile $configPath\nuget.config -NonInteractive } | Out-Null
+    ExecProcess -filePath nuget -argumentList @("install $package -Version $version -Source $source -Source nuget -OutputDirectory $packagesPath -ConfigFile $configPath\nuget.config -NonInteractive")
+
 
     Move-Item -Path $packagesPath\$($package).$($version)\$($package).$($version).nupkg -Destination $packagesPath -Force | Out-Null
     Remove-Item -Path $packagesPath\$($package).$($version) -Recurse -Force | Out-Null
@@ -112,11 +125,13 @@ function UpdateNugetPackageProjectUrl($nuspec, $org, $repository) {
 
 function RepackNugetPackage($nuspec, $package, $version, $packagesPath) {
     $nuspec.OuterXml | Set-Content -Path $packagesPath\$($package).$($version)\$($package).nuspec -Force | Out-Null
-    Exec { nuget pack $packagesPath\$($package).$($version)\$($package).nuspec -OutputDirectory $packagesPath -NonInteractive } | Out-Null    
+    # Exec { nuget pack $packagesPath\$($package).$($version)\$($package).nuspec -OutputDirectory $packagesPath -NonInteractive } | Out-Null    
+    ExecProcess -filePath nuget -argumentList @("nuget pack $packagesPath\$($package).$($version)\$($package).nuspec -OutputDirectory $packagesPath -NonInteractive")
 }
 
 function PushNugetPackage($org, $package, $version, $configPath, $packagesPath, $source) {
-    Exec { nuget push $packagesPath\$($package).$($version).nupkg -Source $source -ConfigFile $configPath\nuget.config -NonInteractive -SkipDuplicate } | Out-Null
+    # Exec { nuget push $packagesPath\$($package).$($version).nupkg -Source $source -ConfigFile $configPath\nuget.config -NonInteractive -SkipDuplicate } | Out-Null
+    ExecProcess -filePath nuget -argumentList @("nuget push $packagesPath\$($package).$($version).nupkg -Source $source -ConfigFile $configPath\nuget.config -NonInteractive -SkipDuplicate")
 }
 
 function DeleteNugetPackage($package, $version, $packagesPath) {
