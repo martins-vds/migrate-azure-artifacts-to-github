@@ -122,3 +122,9 @@ function PushNugetPackage($org, $package, $version, $configPath, $packagesPath, 
 function DeleteNugetPackage($package, $version, $packagesPath) {
     Remove-Item -Path $packagesPath\$($package).$($version) -Recurse -Force | Out-Null
 }
+
+function Cleanup([System.IO.FileInfo]$path) {
+    If (Test-Path -Path $path -PathType Container) {
+        Remove-Item "$($path.FullName.TrimEnd("\"))\*" -Recurse -Force
+    }
+}
