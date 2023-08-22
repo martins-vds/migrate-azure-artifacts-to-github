@@ -9,13 +9,19 @@ function Exec {
 }
 
 function ExecProcess($filePath, $argumentList, $workingDirectory = $PSScriptRoot) {
+    $outputLogPath = Join-Path $Env:Temp "output-$(New-Guid).log"
     $errorsLogPath = Join-Path $Env:Temp "errors-$(New-Guid).log"
+    
+    New-Item -Type File -Path $outputLogPath | Out-Null
     New-Item -Type File -Path $errorsLogPath | Out-Null
 
-    $proc = Start-Process -FilePath $filePath -ArgumentList $argumentList -WorkingDirectory $workingDirectory -Wait -NoNewWindow -PassThru -RedirectStandardError $errorsLogPath  
+    $proc = Start-Process -FilePath $filePath -ArgumentList $argumentList -WorkingDirectory $workingDirectory -Wait -NoNewWindow -PassThru -RedirectStandardError $errorsLogPath -RedirectStandardOutput $outputLogPath 
 
     if ($proc.ExitCode -ne 0) {
-        throw "Failed to run command '$filePath $argumentList'. Check the file '$errorsLogPath' for more information."
+        throw "Failed to run command '$filePath $argumentList'. Check the files '$outputLogPath' and '$errorsLogPath' for more information."
+    }else{
+        Remove-Item -Path $errorsLogPath -Force | Out-Null
+        Remove-Item -Path $outputLogPath -Force | Out-Null
     }
 }
 
