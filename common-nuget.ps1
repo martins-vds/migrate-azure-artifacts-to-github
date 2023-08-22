@@ -1,3 +1,13 @@
+function Exec {
+    param (
+        [scriptblock]$ScriptBlock
+    )
+    & @ScriptBlock
+    if ($lastexitcode -ne 0) {
+        throw "Script block '$($ScriptBlock.ToString().Trim().Substring(0, 10))...' failed with code $($lastexitcode)"
+    }
+}
+
 function ConfigureGithubNuget ($org, $username, $path, $token) {  
     $xml = @"
 <?xml version="1.0" encoding="utf-8"?>
