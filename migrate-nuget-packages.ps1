@@ -103,36 +103,41 @@ $sourceNugetPackages | ForEach-Object {
     $sourceNugetPackageVersions | ForEach-Object {
         $sourceNugetPackageVersion = $_
         
-        if($InternalOnly){
-            if ([string]::IsNullOrEmpty($AdosProject)) {
-                $isInternal = IsPackageInternal -org $AdosOrg -feed $AdosFeed -packageId $sourceNugetPackage.id -packageVersionId $sourceNugetPackageVersion.id -token $sourcePat
+        try {
+            if ($InternalOnly) {
+                if ([string]::IsNullOrEmpty($AdosProject)) {
+                    $isInternal = IsPackageInternal -org $AdosOrg -feed $AdosFeed -packageId $sourceNugetPackage.id -packageVersionId $sourceNugetPackageVersion.id -token $sourcePat
+                }
+                else {
+                    $isInternal = IsPackageInternal -org $AdosOrg -project $AdosProject -feed $AdosFeed -packageId $sourceNugetPackage.id -packageVersionId $sourceNugetPackageVersion.id -token $sourcePat
+                }
+    
+                if (-Not $isInternal) {
+                    Write-Host "Skipping package '$($sourceNugetPackage.name).$($sourceNugetPackageVersion.version)' because it is not internal." -ForegroundColor Yellow
+                    return
+                }
             }
-            else {
-                $isInternal = IsPackageInternal -org $AdosOrg -project $AdosProject -feed $AdosFeed -packageId $sourceNugetPackage.id -packageVersionId $sourceNugetPackageVersion.id -token $sourcePat
-            }
-
-            if (-Not $isInternal) {
-                Write-Host "Skipping package '$($sourceNugetPackage.name).$($sourceNugetPackageVersion.version)' because it is not internal." -ForegroundColor Yellow
-                return
-            }
+    
+            Write-Host "Migrating package '$($sourceNugetPackage.name).$($sourceNugetPackageVersion.version)'..." -ForegroundColor Cyan
+    
+            DownloadNugetPackage -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -source "ados" -configPath $sourceNugetConfig -packagesPath $PackagesPath.FullName
+            
+            UnzipNugetPackage -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -packagesPath $PackagesPath.FullName
+    
+            $spec = ExtractNugetPackageSpec -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -packagesPath $PackagesPath.FullName
+            
+            UpdateNugetPackageRepositoryName -nuspec $spec -org $GithubOrg -repository $GithubRepo
+            UpdateNugetPackageProjectUrl -nuspec $spec -org $GithubOrg -repository $GithubRepo
+    
+            RepackNugetPackage -nuspec $spec -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -packagesPath $PackagesPath.FullName
+    
+            PushNugetPackage  -org $GithubOrg -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -source "github" -configPath $targetNugetConfig -packagesPath $PackagesPath.FullName
+    
+            DeleteNugetPackage -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -packagesPath $PackagesPath.FullName
         }
-
-        Write-Host "Migrating package '$($sourceNugetPackage.name).$($sourceNugetPackageVersion.version)'..." -ForegroundColor Cyan
-
-        DownloadNugetPackage -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -source "ados" -configPath $sourceNugetConfig -packagesPath $PackagesPath.FullName
-        
-        UnzipNugetPackage -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -packagesPath $PackagesPath.FullName
-
-        $spec = ExtractNugetPackageSpec -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -packagesPath $PackagesPath.FullName
-        
-        UpdateNugetPackageRepositoryName -nuspec $spec -org $GithubOrg -repository $GithubRepo
-        UpdateNugetPackageProjectUrl -nuspec $spec -org $GithubOrg -repository $GithubRepo
-
-        RepackNugetPackage -nuspec $spec -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -packagesPath $PackagesPath.FullName
-
-        PushNugetPackage  -org $GithubOrg -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -source "github" -configPath $targetNugetConfig -packagesPath $PackagesPath.FullName
-
-        DeleteNugetPackage -package $sourceNugetPackage.name -version $sourceNugetPackageVersion.version -packagesPath $PackagesPath.FullName 
+        catch {
+            Write-Host "Failed to migrate package '$($sourceNugetPackage.name).$($sourceNugetPackageVersion.version)'. Error: $($_.Exception.Message)" -ForegroundColor Red
+        } 
     }
 }
 
