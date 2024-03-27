@@ -147,5 +147,6 @@ function DeleteNugetPackage($package, $version, $packagesPath) {
 function Cleanup([System.IO.FileInfo]$path) {
     If (Test-Path -Path $path -PathType Container) {
         Remove-Item "$($path.FullName.TrimEnd("\"))\*" -Recurse -Force
+        Remove-Item $path.FullName -Recurse -Force
     }
 }
