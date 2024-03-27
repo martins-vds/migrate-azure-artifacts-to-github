@@ -19,21 +19,7 @@ param (
     $GithubUsername,
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
-    $GithubRepo,
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({
-            if (-Not ($_ | Test-Path) ) {
-                throw "Folder '$_' does not exist. Make sure to create it before running the script."
-            }
-
-            if (-Not ($_ | Test-Path -PathType Container) ) {
-                throw "The Path '$_' argument must be a directory. File paths are not allowed."
-            }
-        
-            return $true 
-        })]
-    [System.IO.FileInfo]
-    $PackagesPath,    
+    $GithubRepo,        
     [Parameter(Mandatory = $false)]
     [string]
     $AdosToken,
@@ -72,6 +58,9 @@ if (-Not(RepositoryExits -org $GithubOrg -repository $GithubRepo -token $targetP
     Write-Host "Repository '$GithubRepo' does not exist in Github organization '$GithubOrg'." -ForegroundColor Red
     exit 0
 }
+
+$PackagesPath = Join-Path -Path $env:Temp -ChildPath $(New-Guid)
+New-Item -ItemType Directory -Path $PackagesPath | Out-Null
 
 Write-Host "Fetching nuget packages from Azure Artifacts feed '$AdosFeed' in Azure DevOps organization '$AdosOrg'..."
 
