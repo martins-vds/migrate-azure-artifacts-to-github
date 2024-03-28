@@ -51,6 +51,32 @@ function RepositoryExits($org, $repository, $token) {
     }
 }
 
+function InstallNugetCli ([string]$InstallPath) {
+    Write-Host "Checking if NuGet is installed..." -ForegroundColor Cyan
+
+    if (Get-Command "nuget.exe" -ErrorAction SilentlyContinue) {
+        Write-Host "NuGet.exe already installed." -ForegroundColor Cyan
+        return
+    }
+
+    try {
+        Write-Host "Installing NuGet..." -ForegroundColor Cyan
+        Invoke-RestMethod -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "$InstallPath\nuget.exe"
+        $env:Path += ";$InstallPath"
+    }
+    catch {
+        Write-Host "Failed to install NuGet. Error: $($_.Exception.Message)" -ForegroundColor Red
+        exit 1
+    }
+}
+
+function CreateTempFolder {
+    $tempFolder = Join-Path -Path $env:Temp -ChildPath $(New-Guid)
+    New-Item -ItemType Directory -Path $tempFolder | Out-Null
+
+    return $tempFolder
+}
+
 $sourcePat = GetToken -token $AdosToken -envToken $env:ADOS_PAT
 $targetPat = GetToken -token $GithubToken -envToken $env:GH_PAT
 
@@ -59,8 +85,9 @@ if (-Not(RepositoryExits -org $GithubOrg -repository $GithubRepo -token $targetP
     exit 0
 }
 
-$PackagesPath = Join-Path -Path $env:Temp -ChildPath $(New-Guid)
-New-Item -ItemType Directory -Path $PackagesPath | Out-Null
+$PackagesPath = CreateTempFolder
+
+InstallNugetCli -InstallPath $PackagesPath
 
 Write-Host "Fetching nuget packages from Azure Artifacts feed '$AdosFeed' in Azure DevOps organization '$AdosOrg'..."
 
